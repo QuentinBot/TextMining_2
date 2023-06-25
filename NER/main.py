@@ -5,6 +5,7 @@ from utils import *
 
 from tqdm import tqdm
 from torch.optim import Adam
+from torch.utils.data import DataLoader
 
 def train(
         rnn_model: nn.Module,
@@ -44,8 +45,22 @@ def evaluate(rnn_model, val_loader):
     return 0
 
 def main():
+    word2index = load_word_index_dict_pickle()
     sents, tags = get_data("data/conll2003_val.pkl")
-    print(sents[0], tags[0])
+    windowed_sents, windowed_tags = create_windows(sents, tags, 100)
+    # print(len(windowed_sents[0]))
+    # print(len(windowed_tags[0]))
+    # return
+    val_data = NERData(windowed_sents, windowed_tags, word2index)
+    # X, y = val_data[0]
+    # print(X.shape, y.shape)
+    # print(X)
+    # print(y)
+    # return
+    val_loader = DataLoader(val_data, batch_size=16)
+    for X, y in val_loader:
+        print(X.shape, y.shape)
+        break
 
 if __name__ == '__main__':
     main()

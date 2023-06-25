@@ -14,15 +14,20 @@ class NERData(Dataset):
 
     NOTE: Do we need a sentence length threshold?
     """
-    def __init__(self, sents, tags, word2index, sent_length_threshold=0):
+    def __init__(
+            self,
+            sents,
+            tags, 
+            word2index: dict, 
+            sent_length_threshold=0
+        ):
         self.entries = []
         for sent, sent_tags in zip(sents, tags):
             entry_word_ind = []
             entry_tags = []
             for word, tag in zip(sent, sent_tags):
-                if word in word2index:
-                    entry_word_ind.append(word)
-                    entry_tags.append(tag)
+                entry_word_ind.append(word2index.get(word, 0))
+                entry_tags.append(tag)
             if len(entry_word_ind) > sent_length_threshold:
                 self.entries.append((entry_word_ind, entry_tags))
 
@@ -63,6 +68,7 @@ Creates a word-to-index-dictionary to assign each word a number.
 NOTE: Do we need a occurence threshold?
 """
 def create_word_index_dict(vocab: dict, occ_treshold=0):
+    # keep index zero for unknown words
     i = 1
     word2index = {}
     for w, c in vocab.items():
@@ -73,16 +79,45 @@ def create_word_index_dict(vocab: dict, occ_treshold=0):
     return word2index
 
 """
+Splits every sentence and its corresponding tag sequence
+into windows of fixed size such that the torch DataLoader
+can iterate over batches of similar sizes.
+
+In cases of incomplete windows the windowed sentence will
+be filled with Nones. The windowed tag sequence will be
+filled with index 9 since the first 9 numbers (incl. 0)
+are already reserved for the possible tags of the 
+conll2003 dataset.
+"""
+def create_windows(sentences, tags, window_size):
+    windowed_sents = []
+    windowed_tags = []
+    for sent, sent_tags in zip(sentences, tags):
+        for i in range(0, len(sent), window_size):
+            windowed_sent = sent[i:i + window_size]
+            windowed_sent_tags = sent_tags[i:i + window_size]
+            padding_size = window_size - len(windowed_sent)
+            if padding_size > 0:
+                windowed_sent += [None] * padding_size
+                windowed_sent_tags += [9] * padding_size
+            windowed_sents.append(windowed_sent)
+            windowed_tags.append(windowed_sent_tags)
+    return windowed_sents, windowed_tags
+
+"""
 Creates a pickle of the word-to-index-dictionary
 to ensure that the model uses the same indices.
 """
 def create_word_index_dict_pickle():
     sents, _ = get_data("data/conll2003_train.pkl")
     vocab = extend_vocab(sents)
+    
     sents, _ = get_data("data/conll2003_val.pkl")
     vocab = extend_vocab(sents, vocab)
+    
     sents, _ = get_data("data/conll2003_test.pkl")
     vocab = extend_vocab(sents, vocab)
+    
     word2index = create_word_index_dict(vocab)
     with open(WORD2INDEX_PATH, 'wb') as fd:
         pickle.dump(word2index, fd, protocol=pickle.HIGHEST_PROTOCOL)

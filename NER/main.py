@@ -1,65 +1,107 @@
+from tqdm import tqdm
+from sklearn.metrics import accuracy_score
+
 import torch
 import torch.nn as nn
-
-from utils import *
-
-from tqdm import tqdm
 from torch.optim import Adam
 from torch.utils.data import DataLoader
 
+from model import RNN_model, BEST_MODEL_PATH
+from utils import load_word_index_dict_pickle, get_data, create_windows, NERData
+
+"""
+Trains the model on the given train dataset.
+Also performs an evaluation of the model on
+the given validation dataset after each 
+training session per epoch. If the accuracy 
+has increased, the model will be saved.
+"""
 def train(
         rnn_model: nn.Module,
         train_loader,
         val_loader,
-        epochs=10,
-        learning_rate=0.1,
-        batch_size=16
+        epochs=1,
+        learning_rate=0.1
     ):
     optimizer = Adam(rnn_model.parameters(), lr=learning_rate)
-    criterion = nn.NLLLoss()
+    criterion = nn.NLLLoss(ignore_index=9)
     val_accuracy = 0
 
     for epoch in range(epochs):
+        print("epoch:", epoch)
+
+        print("training model...")
         rnn_model.train()
-        for X, y in tqdm(train_loader):
+        for batch in tqdm(train_loader):
+            X: torch.Tensor = batch[0]
+            y: torch.Tensor = batch[1]
+            
             optimizer.zero_grad()
 
-            output = rnn_model(X)
-            loss: torch.Tensor = criterion(output, y)
+            out = rnn_model(X)
+            loss: torch.Tensor = criterion(torch.log_softmax(out, -1).flatten(0, 1), y.flatten(0, 1))
             loss.backward()
             optimizer.step()
         
-        rnn_model.eval()
         acc = evaluate(rnn_model, val_loader)
+        print("accuracy:", acc)
         if acc > val_accuracy:
-            torch.save(rnn_model.state_dict(), 'rnn_model_conll.pt')
+            torch.save(rnn_model.state_dict(), BEST_MODEL_PATH)
+            val_accuracy = acc
+            print("model saved!")
 
 """
-TODO: finish it!
+Evaluates the model on the given validation dataset.
 """
-def evaluate(rnn_model, val_loader):
+def evaluate(rnn_model: nn.Module, val_loader):
+    preds = []
+    labels = []
+
+    print("evaluating model...")
+    rnn_model.eval()
     with torch.no_grad():
-        for X, y in val_loader:
-            output = rnn_model(X)
+        for batch in tqdm(val_loader):
+            X: torch.Tensor = batch[0]
+            y: torch.Tensor = batch[1]
+
+            out = rnn_model(X)
+            pred = torch.argmax(out, -1)
+            preds.extend(pred.reshape(-1).tolist())
+            labels.extend(y.reshape(-1).tolist())
     
-    return 0
+    return accuracy_score(preds, labels)
 
 def main():
     word2index = load_word_index_dict_pickle()
-    sents, tags = get_data("data/conll2003_val.pkl")
-    windowed_sents, windowed_tags = create_windows(sents, tags, 100)
-    # print(len(windowed_sents[0]))
-    # print(len(windowed_tags[0]))
-    # return
-    val_data = NERData(windowed_sents, windowed_tags, word2index)
-    # X, y = val_data[0]
-    # print(X.shape, y.shape)
-    # print(X)
-    # print(y)
-    # return
+
+    train_sents, train_tags = get_data("data/conll2003_train.pkl")
+    w_train_sents, w_train_tags = create_windows(train_sents, train_tags, 100)
+    train_data = NERData(w_train_sents, w_train_tags, word2index)
+    train_loader = DataLoader(train_data, batch_size=100)
+    
+    val_sents, val_tags = get_data("data/conll2003_val.pkl")
+    w_val_sents, w_val_tags = create_windows(val_sents, val_tags, 100)
+    val_data = NERData(w_val_sents, w_val_tags, word2index)
     val_loader = DataLoader(val_data, batch_size=16)
-    for X, y in val_loader:
-        print(X.shape, y.shape)
+    
+    rnn_model = RNN_model(256, len(word2index), 100)
+    train(rnn_model, train_loader, val_loader, epochs=10, learning_rate=0.3)
+    return
+    criterion = nn.NLLLoss(ignore_index=9)
+    for batch in val_loader:
+        X: torch.Tensor = batch[0]
+        y: torch.Tensor = batch[1]
+        # break
+        out = rnn_model(X)
+        pred = torch.log_softmax(out, -1).flatten(0, 1)
+        labels = y.flatten(0, 1)
+        print(pred.shape)
+        print(labels.shape)
+        loss = criterion(pred, labels)
+        print(loss)
+        # pred = torch.argmax(out, -1)
+        # print(pred.reshape(-1).tolist())
+        # print(y.reshape(-1).tolist())
         break
 
 if __name__ == '__main__':

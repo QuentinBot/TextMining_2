@@ -1,8 +1,7 @@
-import string
 import pickle
-import torch
-
 from collections import Counter
+
+import torch
 from torch.utils.data import Dataset
 
 WORD2INDEX_PATH = "data/conll2003word2index_dict.pkl"
@@ -38,6 +37,10 @@ class NERData(Dataset):
         sent_ind, sent_tags = self.entries[index]
         return torch.LongTensor(sent_ind), torch.LongTensor(sent_tags)
 
+"""
+Extracts the sentences and its corresponding tag sequences
+from the pickled data.
+"""
 def get_data(path):
     sents = []
     sents_tags = []
@@ -122,12 +125,15 @@ def create_word_index_dict_pickle():
     with open(WORD2INDEX_PATH, 'wb') as fd:
         pickle.dump(word2index, fd, protocol=pickle.HIGHEST_PROTOCOL)
 
+"""
+Loads and unpickles the pickled word-to-index-dictionary.
+"""
 def load_word_index_dict_pickle():
     with open(WORD2INDEX_PATH, 'rb') as fd:
         word2index = pickle.load(fd)
     return word2index
 
-# for debug purposes
+# Run this script to create a word-to-index-dict-pickle if not existing so far!
 if __name__ == '__main__':
     create_word_index_dict_pickle()
     # print(len(load_word_index_dict_pickle()))

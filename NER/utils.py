@@ -71,9 +71,9 @@ Creates a word-to-index-dictionary to assign each word a number.
 NOTE: Do we need a occurence threshold?
 """
 def create_word_index_dict(vocab: dict, occ_treshold=0):
-    # keep index zero for unknown words
+    # keep index zero for padding
     i = 1
-    word2index = {}
+    word2index = {None: 0}
     for w, c in vocab.items():
         if c > occ_treshold:
             word2index[w] = i

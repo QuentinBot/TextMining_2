@@ -1,10 +1,10 @@
 import torch
 import torch.nn as nn
 
-BEST_MODEL_PATH = "data/rnn_model_conll.pt"
+BEST_MODEL_PATH = "models/rnn_model_conll.pt"
 
 class RNN_model(nn.Module):
-    def __init__(self, hidden_size, vocab_size, emb_dim):
+    def __init__(self, vocab_size, emb_dim, hidden_size):
         super().__init__()
 
         self.hidden_size = hidden_size
@@ -24,13 +24,18 @@ class RNN_model(nn.Module):
         # Activation function
         self.relu = nn.ReLU()
     
-    def forward(self, xb):
+    def forward(self, xb: torch.Tensor):
+        # print(torch.max(xb))
         embeddings = self.emb(xb)
-        h_0 = torch.rand(1, self.emb_dim, self.hidden_size)
-        # print(xb.shape)
-        # print(embeddings.shape)
-        # print(h_0.shape)
+        h_0 = torch.rand(1, xb.size(1), self.hidden_size)
         all_hidden_states, last_hidden_state = self.rnn(embeddings, h_0)
         z_0 = self.fc(all_hidden_states)
         out = self.relu(z_0)
         return out
+
+"""
+Consists predefined hyperparameters
+"""
+class HParam():
+    hidden_dim = 256
+    embedding_dim = 100

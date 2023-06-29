@@ -6,7 +6,7 @@ import torch.nn as nn
 from torch.optim import Adam
 from torch.utils.data import DataLoader
 
-from model import RNN_model, BEST_MODEL_PATH
+from model import RNN_model, HParam, BEST_MODEL_PATH
 from utils import load_word_index_dict_pickle, get_data, create_windows, NERData
 
 """
@@ -24,7 +24,9 @@ def train(
         learning_rate=0.1
     ):
     optimizer = Adam(rnn_model.parameters(), lr=learning_rate)
-    criterion = nn.NLLLoss(ignore_index=9)
+    criterion = nn.NLLLoss(
+        # ignore_index=9
+    )
     val_accuracy = 0
 
     for epoch in range(epochs):
@@ -82,10 +84,10 @@ def main():
     val_sents, val_tags = get_data("data/conll2003_val.pkl")
     w_val_sents, w_val_tags = create_windows(val_sents, val_tags, 100)
     val_data = NERData(w_val_sents, w_val_tags, word2index)
-    val_loader = DataLoader(val_data, batch_size=16)
+    val_loader = DataLoader(val_data, batch_size=100)
     
-    rnn_model = RNN_model(256, len(word2index), 100)
-    train(rnn_model, train_loader, val_loader, epochs=10, learning_rate=0.3)
+    rnn_model = RNN_model(len(word2index), emb_dim=HParam.embedding_dim, hidden_size=HParam.hidden_dim)
+    train(rnn_model, train_loader, val_loader, epochs=15, learning_rate=0.3)
     return
     criterion = nn.NLLLoss(ignore_index=9)
     for batch in val_loader:
@@ -95,10 +97,10 @@ def main():
         out = rnn_model(X)
         pred = torch.log_softmax(out, -1).flatten(0, 1)
         labels = y.flatten(0, 1)
-        print(pred.shape)
-        print(labels.shape)
-        loss = criterion(pred, labels)
-        print(loss)
+        print(out.shape)
+        # print(labels.shape)
+        # loss = criterion(pred, labels)
+        # print(loss)
         # pred = torch.argmax(out, -1)
         # print(pred.reshape(-1).tolist())
         # print(y.reshape(-1).tolist())

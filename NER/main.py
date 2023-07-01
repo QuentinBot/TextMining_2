@@ -87,7 +87,7 @@ def main():
     val_loader = DataLoader(val_data, batch_size=100)
     
     rnn_model = RNN_model(len(word2index), emb_dim=HParam.embedding_dim, hidden_size=HParam.hidden_dim)
-    train(rnn_model, train_loader, val_loader, epochs=15, learning_rate=0.3)
+    train(rnn_model, train_loader, val_loader, epochs=10, learning_rate=0.0003)
     return
     criterion = nn.NLLLoss(ignore_index=9)
     for batch in val_loader:
@@ -99,7 +99,7 @@ def main():
         labels = y.flatten(0, 1)
         print(out.shape)
         # print(labels.shape)
-        # loss = criterion(pred, labels)
+        loss = criterion(pred, labels)
         # print(loss)
         # pred = torch.argmax(out, -1)
         # print(pred.reshape(-1).tolist())

@@ -21,18 +21,18 @@ class RNN_model(nn.Module):
 
         self.relu = nn.ReLU()
 
-    def forward(self, inp_sent_1, inp_sent_2):
-        inp_sent_1 = self.emb(inp_sent_1)
-        inp_sent_2 = self.emb(inp_sent_2)
-        inp = torch.cat((inp_sent_1, inp_sent_2), dim=1)
-
+    def forward(self, inp):
+        inp = self.emb(inp)
         h_0 = torch.rand(1, inp.size(0), self.hidden_size)
+        # inp = inp.transpose(0, 1)
         all_hidden_states, last_hidden_state = self.rnn(inp, h_0)
-        out = self.lin1(last_hidden_state.squeeze(0))
+        out = self.lin1(all_hidden_states)
         out = self.relu(out)
         out = self.relu(self.lin2(out))
         out = self.lin3(out)
-
+        out = out.squeeze(dim=2)
+        out = torch.sigmoid(out)
+        # print(out.size())
         return out
 
 

@@ -12,8 +12,8 @@ from utils import get_data, NLIData, word_2_index, get_vocab
 
 def train(rnn_model: nn.Module, train_loader, val_loader, epochs=1, learning_rate=1e-5):
     optimizer = Adam(rnn_model.parameters(), lr=learning_rate)
-    criterion = nn.BCEWithLogitsLoss()
-    # criterion = nn.NLLLoss()
+    # criterion = nn.BCEWithLogitsLoss()
+    criterion = nn.NLLLoss()
 
     best_val_acc = 0
 
@@ -22,15 +22,9 @@ def train(rnn_model: nn.Module, train_loader, val_loader, epochs=1, learning_rat
         rnn_model.train()
 
         for batch in tqdm(train_loader):
-            sent_1, sent_2, labels = batch
-
+            sent, labels = batch
             optimizer.zero_grad()
-
-            outputs = rnn_model(sent_1, sent_2)
-            outputs = torch.squeeze(outputs)
-            labels = labels.float()
-            labels = labels.view(-1, 1)
-            labels = labels.squeeze()
+            outputs = rnn_model(sent)
             loss = criterion(outputs, labels)
 
             loss.backward()
@@ -49,26 +43,24 @@ def train(rnn_model: nn.Module, train_loader, val_loader, epochs=1, learning_rat
 
 
 def evaluate(rnn_model, val_loader):
-    pred = []
+    preds = []
     original = []
 
     rnn_model.eval()
 
     with torch.no_grad():
         for batch in val_loader:
-            sent_1, sent_2, labels = batch
+            sent, labels = batch
 
-            outputs = rnn_model(sent_1, sent_2)
-            outputs = torch.squeeze(outputs)
-
-            # pred_label = torch.argmax(outputs, -1)
-            pred_label = (outputs >= 0.5).long()
-            pred.extend(pred_label.flatten())
-            original.extend(labels.reshape(-1).numpy().tolist())
+            outputs = rnn_model(sent)
+            pred_label = torch.argmax(outputs, -1)
+            print(pred_label)
+            preds.extend(pred_label.reshape(-1).tolist())
+            original.extend(labels.reshape(-1).tolist())
 
     # print(pred_label)
     # print(original)
-    return accuracy_score(original, pred)
+    return accuracy_score(original, preds)
 
 
 def main():

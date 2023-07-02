@@ -9,33 +9,25 @@ import string
 class NLIData(Dataset):
 
     def __init__(self, word2index, sents_1, sents_2, labels):
-        self.sents_1 = sents_1
-        self.sents_2 = sents_2
-        self.labels = labels
-        self.max_char = 256
         self.word2index = word2index
+        self.entries = []
+        self.max_length = 256
+        for sent_1, sent_2, label in zip(sents_1, sents_2, labels):
+            sent = sent_1 + " " + sent_2
+            sent = [word.lower() for word in sent.split()]
+            sent = [self.word2index[word] for word in sent]
+            if len(sent) < self.max_length:
+                sent += [0] * (self.max_length - len(sent))
+            else:
+                sent = sent[:self.max_length]
+            self.entries.append((sent, label))
 
     def __len__(self):
-        return len(self.labels)
+        return len(self.entries)
 
     def __getitem__(self, index):
-        sent_1 = self.sents_1[index].split(" ")
-        sent_1 = [self.word2index[word] for word in sent_1]
-        sent_2 = self.sents_2[index].split(" ")
-        sent_2 = [self.word2index[word] for word in sent_2]
-        label = self.labels[index]
-
-        if len(sent_1) > self.max_char:
-            sent_1 = sent_1[:self.max_char]
-        else:
-            sent_1.extend([0 for _ in range(self.max_char - len(sent_1))])
-
-        if len(sent_2) > self.max_char:
-            sent_2 = sent_2[:self.max_char]
-        else:
-            sent_2.extend([0 for _ in range(self.max_char - len(sent_2))])
-
-        return torch.LongTensor(sent_1), torch.LongTensor(sent_2), torch.LongTensor([label])
+        sent_ind, label = self.entries[index]
+        return torch.LongTensor(sent_ind), label
 
 
 def word_2_index(vocab):

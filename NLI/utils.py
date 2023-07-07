@@ -13,9 +13,8 @@ class NLIData(Dataset):
         self.entries = []
         self.max_length = 256
         for sent_1, sent_2, label in zip(sents_1, sents_2, labels):
-            sent = sent_1 + " EOS " + sent_2
-            sent = [word.lower() for word in sent.split()]
-            sent = [self.word2index[word] for word in sent]
+            sent = sent_1 + " <sep> " + sent_2
+            sent = [self.word2index[word] for word in sent.split()]
             if len(sent) < self.max_length:
                 sent += [0] * (self.max_length - len(sent))
             else:
@@ -35,13 +34,13 @@ def word_2_index(vocab):
     for index, word in enumerate(vocab):
         word2index[word] = index + 1
 
-    word2index["eos"] = len(word2index) + 1
+    word2index["<sep>"] = len(word2index) + 1
     return word2index
 
 
 def get_data(path):
     # nltk.download("stopwords")
-    nltk.download('punkt')
+    # nltk.download('punkt')
 
     data = pd.read_csv(path, sep="\t")
     sents_1 = data["sentence1"].values.tolist()

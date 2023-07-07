@@ -6,7 +6,7 @@ import torch.nn as nn
 from torch.optim import Adam
 from torch.utils.data import DataLoader
 
-from model import RNN_model, BEST_NLI_PATH
+from model import RNN_model, BEST_NLI_PATH, HParam
 from utils import get_data, NLIData, word_2_index, get_vocab
 
 
@@ -35,7 +35,7 @@ def train(rnn_model: nn.Module, train_loader, val_loader, epochs=1, learning_rat
 
         if acc > best_val_acc:
             best_val_acc = acc
-            torch.save(rnn_model, BEST_NLI_PATH)
+            torch.save(rnn_model.state_dict(), BEST_NLI_PATH)
             print(f"Accuracy: {acc} -> model saved")
         else:
             print(f"Accuracy: {acc}")
@@ -67,8 +67,8 @@ def main():
     val_path = "data/dev.tsv"
     test_path = "data/test.tsv"
 
-    EMB_DIM = 100
-    HID_SIZE = 512
+    EMB_DIM = HParam.embedding_dim
+    HID_SIZE = HParam.hidden_size
 
     train_sents_1, train_sents_2, train_labels = get_data(train_path)
     val_sents_1, val_sents_2, val_labels = get_data(val_path)

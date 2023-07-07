@@ -28,3 +28,7 @@ class RNN_model(nn.Module):
         return out
 
 
+class HParam():
+    hidden_size = 256
+    embedding_dim = 100
+

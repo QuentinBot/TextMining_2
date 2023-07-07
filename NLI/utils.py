@@ -12,6 +12,7 @@ class NLIData(Dataset):
         self.word2index = word2index
         self.entries = []
         self.max_length = 256
+        # label_encodings = [one_hot_encode(label, 2) for label in labels]
         for sent_1, sent_2, label in zip(sents_1, sents_2, labels):
             sent = sent_1 + " <sep> " + sent_2
             sent = [self.word2index[word] for word in sent.split()]
@@ -26,7 +27,7 @@ class NLIData(Dataset):
 
     def __getitem__(self, index):
         sent_ind, label = self.entries[index]
-        return torch.LongTensor(sent_ind), label
+        return torch.LongTensor(sent_ind), torch.LongTensor([label])
 
 
 def word_2_index(vocab):

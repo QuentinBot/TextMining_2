@@ -25,8 +25,14 @@ def train(rnn_model: nn.Module, train_loader, val_loader, epochs=1, learning_rat
             sent, labels = batch
             optimizer.zero_grad()
             outputs = rnn_model(sent)
-            output_labels = torch.log_softmax(outputs, dim=2)
-            loss = criterion(output_labels.squeeze(0), labels)
+
+            labels = labels.flatten(0, 1)
+            # print(outputs)
+            output_labels = torch.argmax(outputs, dim=1).float()
+            # print(output_labels)
+            # print(labels)
+            output_labels.requires_grad = True
+            loss = criterion(output_labels, labels)
 
             loss.backward()
             optimizer.step()
@@ -52,12 +58,12 @@ def evaluate(rnn_model, val_loader):
             sent, labels = batch
 
             outputs = rnn_model(sent)
-            pred_label = torch.argmax(outputs, -1)
-            print(pred_label)
+            outputs = outputs[:, 1, :]
+            pred_label = torch.argmax(outputs, dim=1)
             preds.extend(pred_label.reshape(-1).tolist())
             original.extend(labels.reshape(-1).tolist())
 
-    # print(pred_label)
+    print(pred_label)
     # print(original)
     return accuracy_score(original, preds)
 
@@ -83,7 +89,7 @@ def main():
     val_data = NLIData(word2index, val_sents_1, val_sents_2, val_labels)
     val_loader = DataLoader(val_data, batch_size=100)
 
-    rnn_model = RNN_model(len(word2index), EMB_DIM, HID_SIZE)
+    rnn_model = RNN_model(len(word2index)+1, EMB_DIM, HID_SIZE)
     train(rnn_model, train_loader, val_loader, epochs=15, learning_rate=0.01)
 
 

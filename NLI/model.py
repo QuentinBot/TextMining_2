@@ -16,6 +16,10 @@ class RNN_model(nn.Module):
         self.rnn = nn.RNN(self.emb_dim, self.hidden_size, batch_first=True)
 
         self.lin1 = nn.Linear(self.hidden_size, 2)
+        # self.fc = nn.Sequential(
+        #     nn.Linear(self.hidden_size, self.hidden_size // 2),
+        #     nn.Linear(self.hidden_size // 2, 2)
+        # )
 
         self.relu = nn.ReLU()
 
@@ -23,9 +27,11 @@ class RNN_model(nn.Module):
         inp = self.emb(inp)
         h_0 = torch.rand(1, inp.size(0), self.hidden_size)
         all_hidden_states, last_hidden_state = self.rnn(inp, h_0)
-        out = self.lin1(last_hidden_state)
+        out = self.lin1(all_hidden_states)
+        # out = self.fc(all_hidden_states)
         out = self.relu(out)
         return out
+
 
 
 class HParam():

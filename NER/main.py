@@ -7,7 +7,7 @@ from torch.optim import Adam
 from torch.utils.data import DataLoader
 
 from model import RNN_model, HParam, BEST_MODEL_PATH
-from utils import load_word_index_dict_pickle, get_data, create_windows, NERData
+from utils import load_word_index_dict_pickle, create_dataloader, get_data, create_windows, NERData
 
 """
 Trains the model on the given train dataset.
@@ -29,7 +29,7 @@ def train(
     )
     val_accuracy = 0
 
-    for epoch in range(epochs):
+    for epoch in range(1, epochs + 1):
         print("epoch:", epoch)
 
         print("training model...")
@@ -75,6 +75,17 @@ def evaluate(rnn_model: nn.Module, val_loader):
 
 def main():
     word2index = load_word_index_dict_pickle()
+    train_loader = create_dataloader("data/conll2003_train.pkl", word2index, batch_size=100, shuffle=True, window_size=100)
+    val_loader = create_dataloader("data/conll2003_val.pkl", word2index, batch_size=100, shuffle=True, window_size=100)
+    
+    rnn_model = RNN_model(len(word2index), emb_dim=HParam.embedding_dim, hidden_size=HParam.hidden_dim)
+    train(rnn_model, train_loader, val_loader, epochs=10, learning_rate=0.0003)
+
+"""
+NOTE: For experimental purposes
+"""
+def test():
+    word2index = load_word_index_dict_pickle()
 
     train_sents, train_tags = get_data("data/conll2003_train.pkl")
     w_train_sents, w_train_tags = create_windows(train_sents, train_tags, 100)
@@ -87,8 +98,6 @@ def main():
     val_loader = DataLoader(val_data, batch_size=100)
     
     rnn_model = RNN_model(len(word2index), emb_dim=HParam.embedding_dim, hidden_size=HParam.hidden_dim)
-    train(rnn_model, train_loader, val_loader, epochs=10, learning_rate=0.0003)
-    return
     criterion = nn.NLLLoss(ignore_index=9)
     for batch in val_loader:
         X: torch.Tensor = batch[0]

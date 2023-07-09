@@ -2,7 +2,7 @@ import pickle
 from collections import Counter
 
 import torch
-from torch.utils.data import Dataset
+from torch.utils.data import Dataset, DataLoader
 
 WORD2INDEX_PATH = "data/conll2003word2index_dict.pkl"
 
@@ -10,15 +10,12 @@ class NERData(Dataset):
 
     """
     Creates a dataset of sentences and tags for the torch Data loader.
-
-    NOTE: Do we need a sentence length threshold?
     """
     def __init__(
             self,
             sents,
             tags, 
-            word2index: dict, 
-            sent_length_threshold=0
+            word2index: dict,
         ):
         self.entries = []
         for sent, sent_tags in zip(sents, tags):
@@ -27,8 +24,7 @@ class NERData(Dataset):
             for word, tag in zip(sent, sent_tags):
                 entry_word_ind.append(word2index.get(word, 0))
                 entry_tags.append(tag)
-            if len(entry_word_ind) > sent_length_threshold:
-                self.entries.append((entry_word_ind, entry_tags))
+            self.entries.append((entry_word_ind, entry_tags))
 
     def __len__(self):
         return len(self.entries)
@@ -132,6 +128,17 @@ def load_word_index_dict_pickle():
     with open(WORD2INDEX_PATH, 'rb') as fd:
         word2index = pickle.load(fd)
     return word2index
+
+"""
+Creates a torch dataloader with a specific
+batch size and a window size.
+"""
+def create_dataloader(path, word2index, batch_size=1, shuffle=False, window_size=100):
+    sents, tags = get_data(path)
+    w_sents, w_tags = create_windows(sents, tags, window_size)
+    data = NERData(w_sents, w_tags, word2index)
+    loader = DataLoader(data, batch_size=batch_size, shuffle=shuffle)
+    return loader
 
 # Run this script to create a word-to-index-dict-pickle if not existing so far!
 if __name__ == '__main__':

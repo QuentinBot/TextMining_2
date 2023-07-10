@@ -15,18 +15,19 @@ class NLIData(Dataset):
         for sent_1, sent_2, label in zip(sents_1, sents_2, labels):
             sent = sent_1 + " <sep> " + sent_2
             sent = [self.word2index[word] for word in sent.split()]
-            if len(sent) < self.max_length:
+            original_length = len(sent)
+            if original_length < self.max_length:
                 sent += [0] * (self.max_length - len(sent))
             else:
                 sent = sent[:self.max_length]
-            self.entries.append((sent, label))
+            self.entries.append((sent, label, original_length))
 
     def __len__(self):
         return len(self.entries)
 
     def __getitem__(self, index):
-        sent_ind, label = self.entries[index]
-        return torch.LongTensor(sent_ind), label
+        sent_ind, label, original_lengths = self.entries[index]
+        return torch.LongTensor(sent_ind), label, original_lengths
 
 
 def word_2_index(vocab):

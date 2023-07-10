@@ -22,11 +22,12 @@ def train(rnn_model: nn.Module, train_loader, val_loader, epochs=1, learning_rat
         rnn_model.train()
 
         for batch in tqdm(train_loader):
-            sent, labels = batch
+            sent, labels, lengths = batch
             optimizer.zero_grad()
-            outputs = rnn_model(sent)
-            output_labels = torch.log_softmax(outputs, dim=2)
-            loss = criterion(output_labels.squeeze(0), labels)
+            outputs = rnn_model(sent, lengths)
+            output_labels = torch.log_softmax(outputs, dim=1)
+
+            loss = criterion(output_labels, labels)
 
             loss.backward()
             optimizer.step()
@@ -49,9 +50,9 @@ def evaluate(rnn_model, val_loader):
 
     with torch.no_grad():
         for batch in val_loader:
-            sent, labels = batch
+            sent, labels, lengths = batch
 
-            outputs = rnn_model(sent)
+            outputs = rnn_model(sent, lengths)
             pred_label = torch.argmax(outputs, -1)
             print(pred_label)
             preds.extend(pred_label.reshape(-1).tolist())

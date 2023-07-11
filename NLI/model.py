@@ -1,6 +1,5 @@
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 
 BEST_NLI_MODEL_PATH = "models/rnn_model_winograd.pt"
 
@@ -18,8 +17,8 @@ class Clf_model(nn.Module):
 
         # RNNs
         self.rnn = nn.RNN(self.emb_dim, self.hidden_dim, batch_first=True, num_layers=self.num_layers, bidirectional=bidirectional)
-        self.gru = nn.GRU(self.emb_dim, self.hidden_dim, batch_first=True, num_layers=self.num_layers, bidirectional=bidirectional)
-        self.lstm = nn.LSTM(self.emb_dim, self.hidden_dim, batch_first=True, num_layers=self.num_layers, bidirectional=bidirectional)
+        # self.gru = nn.GRU(self.emb_dim, self.hidden_dim, batch_first=True, num_layers=self.num_layers, bidirectional=bidirectional)
+        # self.lstm = nn.LSTM(self.emb_dim, self.hidden_dim, batch_first=True, num_layers=self.num_layers, bidirectional=bidirectional)
 
         # Fully connected layers
         fc_dim = self.hidden_dim * self.bidirectional
@@ -28,9 +27,9 @@ class Clf_model(nn.Module):
 
         # Activation functions
         self.relu = nn.ReLU()
-        self.sigmoid = nn.Sigmoid()
-        self.tanh = nn.Tanh()
-        self.dropout = nn.Dropout(0.15)
+        # self.sigmoid = nn.Sigmoid()
+        # self.tanh = nn.Tanh()
+        # self.dropout = nn.Dropout(0.15)
 
     def forward(self, a, a_lengths, b, b_lengths):
         bs = a.size(0)

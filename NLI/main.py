@@ -3,10 +3,10 @@ from sklearn.metrics import accuracy_score
 
 import torch
 import torch.nn as nn
-from torch.optim import Adam, SGD
+from torch.optim import Adam
 from torch.utils.data import DataLoader
 
-from model import Clf_model, HParam
+from model import Clf_model, HParam, BEST_NLI_MODEL_PATH
 from utils import load_word_index_dict_pickle, get_data, NLIData
 
 def main():
@@ -28,7 +28,7 @@ def main():
         num_layers=HParam.num_layers, 
         bidirectional=HParam.bidirectional
     )
-    train(rnn_model, train_loader, val_loader, epochs=20, learning_rate=0.001)
+    train(rnn_model, train_loader, val_loader, epochs=10, learning_rate=0.001)
     # for batch in train_loader:
     #     a, a_len, b, b_len, labels = batch
     #     # print(a)
@@ -76,6 +76,10 @@ def train(
         
         acc = evaluate(rnn_model, val_loader)
         print("accuracy:", acc)
+        if acc > val_accuracy:
+            torch.save(rnn_model.state_dict(), BEST_NLI_MODEL_PATH)
+            val_accuracy = acc
+            print("model saved!")
 
 def evaluate(rnn_model: nn.Module, val_loader):
     preds = []
